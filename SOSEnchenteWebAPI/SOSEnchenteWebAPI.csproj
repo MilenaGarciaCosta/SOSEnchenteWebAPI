@@ -22,6 +22,9 @@
 
   <ItemGroup>
     <Folder Include="Controllers\" />
+    <Folder Include="DbAdapter\Repositories\" />
+    <Folder Include="Domain\Interfaces\" />
+    <Folder Include="Domain\DTOs\" />
   </ItemGroup>
 
 </Project>
