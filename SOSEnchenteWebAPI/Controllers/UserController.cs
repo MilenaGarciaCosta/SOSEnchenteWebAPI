@@ -13,12 +13,14 @@ public class UserController : ControllerBase
     private readonly IUserRepository _userRepository;
     private readonly IPasswordService _passwordService;
     private readonly IJwtService _jwtService;
+    private readonly IValidationService _validationService;
 
-    public UserController(IUserRepository userRepository, IPasswordService passwordService, IJwtService jwtService)
+    public UserController(IUserRepository userRepository, IPasswordService passwordService, IJwtService jwtService, IValidationService validationService)
     {
         _userRepository = userRepository;
         _passwordService = passwordService;
         _jwtService = jwtService;
+        _validationService = validationService;
     }
 
     [HttpPost("register")]
@@ -30,6 +32,24 @@ public class UserController : ControllerBase
             {
                 Success = false,
                 Message = "Email, senha, e nome são obrigatórios."
+            });
+        }
+
+        if (!_validationService.IsValidEmail(request.Email))
+        {
+            return BadRequest(new AuthResponse
+            {
+                Success = false,
+                Message = _validationService.GetEmailValidationErrorMessage()
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber) && !_validationService.IsValidPhoneNumber(request.PhoneNumber))
+        {
+            return BadRequest(new AuthResponse
+            {
+                Success = false,
+                Message = _validationService.GetPhoneNumberValidationErrorMessage()
             });
         }
 
@@ -107,6 +127,15 @@ public class UserController : ControllerBase
             {
                 Success = false,
                 Message = "Email e senha são obrigatórios."
+            });
+        }
+
+        if (!_validationService.IsValidEmail(request.Email))
+        {
+            return BadRequest(new AuthResponse
+            {
+                Success = false,
+                Message = _validationService.GetEmailValidationErrorMessage()
             });
         }
 
