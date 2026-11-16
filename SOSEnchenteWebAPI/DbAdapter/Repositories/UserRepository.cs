@@ -37,4 +37,11 @@ public class UserRepository : IUserRepository
     {
         await _context.SaveChangesAsync();
     }
+
+    public async Task<User?> GetUserByIdAsync(int id)
+    {
+        return await _context.Users
+            .Include(u => u.HealthProfile)
+            .FirstOrDefaultAsync(u => u.Id == id);
+    }
 }

@@ -3,6 +3,8 @@ using SOSEnchenteWebAPI.Domain.DTOs;
 using SOSEnchenteWebAPI.Domain.Interfaces;
 using SOSEnchenteWebAPI.Domain.Models;
 using SOSEnchenteWebAPI.Services;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SOSEnchenteWebAPI.Controllers;
 
@@ -193,5 +195,45 @@ public class UserController : ControllerBase
                 Message = $"Um erro ocorreu durante o login: {ex.Message}"
             });
         }
+    }
+
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<ActionResult<UserDto>> GetMe()
+    {
+        var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var user = await _userRepository.GetUserByIdAsync(userId);
+
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(ToUserDto(user));
+    }
+
+    private static UserDto ToUserDto(User user)
+    {
+        return new UserDto
+        {
+            Id = user.Id,
+            Email = user.Email,
+            Name = user.Name,
+            Age = user.Age,
+            PhoneNumber = user.PhoneNumber,
+            HealthProfile = user.HealthProfile != null ? new HealthProfileDto
+            {
+                Id = user.HealthProfile.Id,
+                MobilityLevel = user.HealthProfile.MobilityLevel,
+                LivesAlone = user.HealthProfile.LivesAlone,
+                HealthConditions = user.HealthProfile.HealthConditions
+            } : null
+        };
     }
 }
