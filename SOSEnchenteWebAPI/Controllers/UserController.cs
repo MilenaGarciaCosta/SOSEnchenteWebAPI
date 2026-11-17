@@ -177,6 +177,7 @@ public class UserController : ControllerBase
                     Name = user.Name,
                     Age = user.Age,
                     PhoneNumber = user.PhoneNumber,
+                    IsAdmin = user.IsAdmin,
                     HealthProfile = user.HealthProfile != null ? new HealthProfileDto
                     {
                         Id = user.HealthProfile.Id,
@@ -225,6 +226,7 @@ public class UserController : ControllerBase
             Name = user.Name,
             Age = user.Age,
             PhoneNumber = user.PhoneNumber,
+            IsAdmin = user.IsAdmin,
             HealthProfile = user.HealthProfile != null ? new HealthProfileDto
             {
                 Id = user.HealthProfile.Id,

@@ -58,4 +58,12 @@ public class UserRepository : IUserRepository
         await _context.SaveChangesAsync();
         return emergencyContact;
     }
+
+    public async Task<List<User>> GetAllUsersAsync()
+    {
+        return await _context.Users
+            .Include(u => u.HealthProfile)
+            .Where(u => !u.IsAdmin)
+            .ToListAsync();
+    }
 }

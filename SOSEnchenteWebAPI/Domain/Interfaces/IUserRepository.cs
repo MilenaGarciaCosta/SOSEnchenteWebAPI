@@ -11,4 +11,5 @@ public interface IUserRepository
     Task<User?> GetUserByIdAsync(int id);
     Task<List<EmergencyContact>> GetUserEmergencyContactsAsync(int userId);
     Task<EmergencyContact> AddEmergencyContactAsync(EmergencyContact emergencyContact);
+    Task<List<User>> GetAllUsersAsync();
 }

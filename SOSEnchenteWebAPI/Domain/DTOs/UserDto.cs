@@ -10,4 +10,5 @@ public class UserDto
     public int Age { get; set; }
     public string PhoneNumber { get; set; } = string.Empty;
     public HealthProfileDto? HealthProfile { get; set; }
+    public bool IsAdmin { get; set; }
 }

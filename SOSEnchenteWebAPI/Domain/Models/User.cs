@@ -9,4 +9,5 @@ public class User
     public string PhoneNumber { get; set; } = string.Empty;
     public HealthProfile HealthProfile { get; set; } = new HealthProfile();
     public List<EmergencyContact> EmergencyContacts { get; set; } = new List<EmergencyContact>();
+    public bool IsAdmin { get; set; } = false;
 }
