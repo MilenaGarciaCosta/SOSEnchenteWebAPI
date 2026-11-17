@@ -9,4 +9,6 @@ public interface IUserRepository
     Task<bool> UserExistsAsync(string email);
     Task SaveChangesAsync();
     Task<User?> GetUserByIdAsync(int id);
+    Task<List<EmergencyContact>> GetUserEmergencyContactsAsync(int userId);
+    Task<EmergencyContact> AddEmergencyContactAsync(EmergencyContact emergencyContact);
 }

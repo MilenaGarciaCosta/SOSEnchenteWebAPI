@@ -44,4 +44,18 @@ public class UserRepository : IUserRepository
             .Include(u => u.HealthProfile)
             .FirstOrDefaultAsync(u => u.Id == id);
     }
+
+    public async Task<List<EmergencyContact>> GetUserEmergencyContactsAsync(int userId)
+    {
+        return await _context.EmergencyContacts
+            .Where(ec => ec.UserId == userId)
+            .ToListAsync();
+    }
+
+    public async Task<EmergencyContact> AddEmergencyContactAsync(EmergencyContact emergencyContact)
+    {
+        _context.EmergencyContacts.Add(emergencyContact);
+        await _context.SaveChangesAsync();
+        return emergencyContact;
+    }
 }

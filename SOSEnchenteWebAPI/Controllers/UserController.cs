@@ -198,8 +198,8 @@ public class UserController : ControllerBase
     }
 
     [Authorize]
-    [HttpGet("me")]
-    public async Task<ActionResult<UserDto>> GetMe()
+    [HttpGet]
+    public async Task<ActionResult<UserDto>> GetUser()
     {
         if (!TryGetUserId(out var userId))
         {
@@ -242,8 +242,8 @@ public class UserController : ControllerBase
     }
 
     [Authorize]
-    [HttpPut("me")]
-    public async Task<ActionResult<UserDto>> UpdateMe([FromBody] UpdateUserRequest request)
+    [HttpPut]
+    public async Task<ActionResult<UserDto>> UpdateUser([FromBody] UpdateUserRequest request)
     {
         if (!TryGetUserId(out var userId))
         {
@@ -324,6 +324,106 @@ public class UserController : ControllerBase
             {
                 Success = false,
                 Message = $"Um erro ocorreu ao atualizar o usuário: {ex.Message}"
+            });
+        }
+    }
+
+    [Authorize]
+    [HttpGet("contacts")]
+    public async Task<ActionResult<List<EmergencyContactDto>>> GetEmergencyContacts()
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var emergencyContacts = await _userRepository.GetUserEmergencyContactsAsync(userId);
+            var emergencyContactDtos = emergencyContacts.Select(ec => new EmergencyContactDto
+            {
+                Id = ec.Id,
+                Name = ec.Name,
+                Description = ec.Description,
+                PhoneNumber = ec.PhoneNumber
+            }).ToList();
+
+            return Ok(emergencyContactDtos);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse
+            {
+                Success = false,
+                Message = $"Um erro ocorreu ao buscar por contatos de emergência: {ex.Message}"
+            });
+        }
+    }
+
+    [Authorize]
+    [HttpPost("contacts")]
+    public async Task<ActionResult<EmergencyContactDto>> AddEmergencyContact([FromBody] CreateEmergencyContactRequest request)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            return BadRequest(new AuthResponse
+            {
+                Success = false,
+                Message = "O nome é obrigatório."
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            return BadRequest(new AuthResponse
+            {
+                Success = false,
+                Message = "O número de telefone é obrigatório."
+            });
+        }
+
+        if (!_validationService.IsValidPhoneNumber(request.PhoneNumber))
+        {
+            return BadRequest(new AuthResponse
+            {
+                Success = false,
+                Message = _validationService.GetPhoneNumberValidationErrorMessage()
+            });
+        }
+
+        try
+        {
+            var emergencyContact = new EmergencyContact
+            {
+                UserId = userId,
+                Name = request.Name.Trim(),
+                Description = request.Description?.Trim() ?? string.Empty,
+                PhoneNumber = request.PhoneNumber.Trim()
+            };
+
+            var createdContact = await _userRepository.AddEmergencyContactAsync(emergencyContact);
+
+            var emergencyContactDto = new EmergencyContactDto
+            {
+                Id = createdContact.Id,
+                Name = createdContact.Name,
+                Description = createdContact.Description,
+                PhoneNumber = createdContact.PhoneNumber
+            };
+
+            return CreatedAtAction(nameof(AddEmergencyContact), new { id = createdContact.Id }, emergencyContactDto);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse
+            {
+                Success = false,
+                Message = $"Um erro ocorreu ao adicionar o contato de emergência: {ex.Message}"
             });
         }
     }

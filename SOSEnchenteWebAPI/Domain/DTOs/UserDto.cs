@@ -1,4 +1,6 @@
-﻿namespace SOSEnchenteWebAPI.Domain.DTOs;
+﻿using SOSEnchenteWebAPI.Domain.Models;
+
+namespace SOSEnchenteWebAPI.Domain.DTOs;
 
 public class UserDto
 {
