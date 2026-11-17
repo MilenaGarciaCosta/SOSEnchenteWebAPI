@@ -201,9 +201,7 @@ public class UserController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<UserDto>> GetMe()
     {
-        var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (!int.TryParse(userIdClaim, out var userId))
+        if (!TryGetUserId(out var userId))
         {
             return Unauthorized();
         }
@@ -235,5 +233,98 @@ public class UserController : ControllerBase
                 HealthConditions = user.HealthProfile.HealthConditions
             } : null
         };
+    }
+
+    private bool TryGetUserId(out int userId)
+    {
+        var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return int.TryParse(userIdClaim, out userId);
+    }
+
+    [Authorize]
+    [HttpPut("me")]
+    public async Task<ActionResult<UserDto>> UpdateMe([FromBody] UpdateUserRequest request)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized(new AuthResponse
+            {
+                Success = false,
+                Message = "Token inválido."
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            return BadRequest(new AuthResponse
+            {
+                Success = false,
+                Message = "O nome é obrigatório."
+            });
+        }
+
+        if (request.Age < 1 || request.Age > 120)
+        {
+            return BadRequest(new AuthResponse
+            {
+                Success = false,
+                Message = "Informe uma idade válida."
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber) && !_validationService.IsValidPhoneNumber(request.PhoneNumber))
+        {
+            return BadRequest(new AuthResponse
+            {
+                Success = false,
+                Message = _validationService.GetPhoneNumberValidationErrorMessage()
+            });
+        }
+
+        if (request.HealthProfile != null && (request.HealthProfile.MobilityLevel < 1 || request.HealthProfile.MobilityLevel > 4))
+        {
+            return BadRequest(new AuthResponse
+            {
+                Success = false,
+                Message = "Nível de mobilidade inválido."
+            });
+        }
+
+        var user = await _userRepository.GetUserByIdAsync(userId);
+
+        if (user == null)
+        {
+            return NotFound(new AuthResponse
+            {
+                Success = false,
+                Message = "Usuário não encontrado."
+            });
+        }
+
+        user.Name = request.Name.Trim();
+        user.Age = request.Age;
+        user.PhoneNumber = request.PhoneNumber.Trim();
+
+        if (request.HealthProfile != null)
+        {
+            user.HealthProfile ??= new HealthProfile();
+            user.HealthProfile.MobilityLevel = request.HealthProfile.MobilityLevel;
+            user.HealthProfile.LivesAlone = request.HealthProfile.LivesAlone;
+            user.HealthProfile.HealthConditions = request.HealthProfile.HealthConditions;
+        }
+
+        try
+        {
+            await _userRepository.SaveChangesAsync();
+            return Ok(ToUserDto(user));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse
+            {
+                Success = false,
+                Message = $"Um erro ocorreu ao atualizar o usuário: {ex.Message}"
+            });
+        }
     }
 }
