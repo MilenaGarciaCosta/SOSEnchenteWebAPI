@@ -472,8 +472,8 @@ public class UserController : ControllerBase
     {
         try
         {
-            var userEmail = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userEmail) || !int.TryParse(userEmail, out var parsedUserEmail))
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(userEmail))
             {
                 return Unauthorized(new AuthResponse
                 {
