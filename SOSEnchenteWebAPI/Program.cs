@@ -6,6 +6,7 @@ using SOSEnchenteWebAPI.DbAdapter.Repositories;
 using SOSEnchenteWebAPI.Domain.Interfaces;
 using SOSEnchenteWebAPI.Services;
 using System.Text;
+using SOSEnchenteWebAPI.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,8 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IValidationService, ValidationService>();
 builder.Services.AddScoped<IPriorityService, PriorityService>();
+builder.Services.AddSignalR();
+builder.Services.AddHostedService<MqttAlertListener>();
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -74,4 +77,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<AlertHub>("/hubs/alerts");
 app.Run();
