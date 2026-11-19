@@ -66,4 +66,19 @@ public class UserRepository : IUserRepository
             .Where(u => !u.IsAdmin)
             .ToListAsync();
     }
+
+    public async Task<List<User>> GetDependentsAsync(int userId)
+    {
+        return await _context.Dependents
+            .Where(d => d.UserId == userId)
+            .Select(d => d.DependentUser)
+            .ToListAsync();
+    }
+
+    public async Task<Dependent> AddDependentAsync(Dependent dependent)
+    {
+        _context.Dependents.Add(dependent);
+        await _context.SaveChangesAsync();
+        return dependent;
+    }
 }

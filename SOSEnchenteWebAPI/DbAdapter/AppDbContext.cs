@@ -10,6 +10,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<HealthProfile> HealthProfiles { get; set; }
     public DbSet<EmergencyContact> EmergencyContacts { get; set; }
+    public DbSet<Dependent> Dependents { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -30,5 +31,20 @@ public class AppDbContext : DbContext
             .WithOne()
             .HasForeignKey(ec => ec.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Dependent>()
+            .HasKey(d => new { d.UserId, d.DependentId });
+
+        modelBuilder.Entity<Dependent>()
+            .HasOne(d => d.User)
+            .WithMany(u => u.Dependents)
+            .HasForeignKey(d => d.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Dependent>()
+            .HasOne(d => d.DependentUser)
+            .WithMany()
+            .HasForeignKey(d => d.DependentId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

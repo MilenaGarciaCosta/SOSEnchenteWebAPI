@@ -21,6 +21,21 @@ namespace SOSEnchenteWebAPI.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("SOSEnchenteWebAPI.Domain.Models.Dependent", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DependentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "DependentId");
+
+                    b.HasIndex("DependentId");
+
+                    b.ToTable("Dependents");
+                });
+
             modelBuilder.Entity("SOSEnchenteWebAPI.Domain.Models.EmergencyContact", b =>
                 {
                     b.Property<int>("Id")
@@ -116,6 +131,25 @@ namespace SOSEnchenteWebAPI.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("SOSEnchenteWebAPI.Domain.Models.Dependent", b =>
+                {
+                    b.HasOne("SOSEnchenteWebAPI.Domain.Models.User", "DependentUser")
+                        .WithMany()
+                        .HasForeignKey("DependentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SOSEnchenteWebAPI.Domain.Models.User", "User")
+                        .WithMany("Dependents")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DependentUser");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SOSEnchenteWebAPI.Domain.Models.EmergencyContact", b =>
                 {
                     b.HasOne("SOSEnchenteWebAPI.Domain.Models.User", null)
@@ -136,6 +170,8 @@ namespace SOSEnchenteWebAPI.Migrations
 
             modelBuilder.Entity("SOSEnchenteWebAPI.Domain.Models.User", b =>
                 {
+                    b.Navigation("Dependents");
+
                     b.Navigation("EmergencyContacts");
 
                     b.Navigation("HealthProfile")

@@ -12,4 +12,6 @@ public interface IUserRepository
     Task<List<EmergencyContact>> GetUserEmergencyContactsAsync(int userId);
     Task<EmergencyContact> AddEmergencyContactAsync(EmergencyContact emergencyContact);
     Task<List<User>> GetAllUsersAsync();
+    Task<List<User>> GetDependentsAsync(int userId);
+    Task<Dependent> AddDependentAsync(Dependent dependent);
 }

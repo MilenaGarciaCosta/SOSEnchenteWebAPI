@@ -429,4 +429,113 @@ public class UserController : ControllerBase
             });
         }
     }
+
+    [Authorize]
+    [HttpGet("dependents")]
+    public async Task<ActionResult<List<DependentDto>>> GetDependents()
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var parsedUserId))
+            {
+                return Unauthorized(new AuthResponse
+                {
+                    Success = false,
+                    Message = "Usuário não autenticado."
+                });
+            }
+
+            var dependents = await _userRepository.GetDependentsAsync(parsedUserId);
+            var dependentsDto = dependents.Select(d => new DependentDto
+            {
+                Id = d.Id,
+                Name = d.Name,
+                Age = d.Age
+            }).ToList();
+
+            return Ok(dependentsDto);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse
+            {
+                Success = false,
+                Message = $"Um erro ocorreu ao buscar os dependentes: {ex.Message}"
+            });
+        }
+    }
+
+    [Authorize]
+    [HttpPost("dependents")]
+    public async Task<ActionResult<DependentDto>> AddDependent([FromBody] AddDependentRequest request)
+    {
+        try
+        {
+            var userEmail = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userEmail) || !int.TryParse(userEmail, out var parsedUserEmail))
+            {
+                return Unauthorized(new AuthResponse
+                {
+                    Success = false,
+                    Message = "Usuário não autenticado."
+                });
+            }
+
+            if (request.DependentEmail == null)
+            {
+                return BadRequest(new AuthResponse
+                {
+                    Success = false,
+                    Message = "O email do dependente deve ser válido."
+                });
+            }
+
+            if (userEmail == request.DependentEmail)
+            {
+                return BadRequest(new AuthResponse
+                {
+                    Success = false,
+                    Message = "Um usuário não pode ser seu próprio dependente."
+                });
+            }
+
+            var dependentUser = await _userRepository.GetUserByEmailAsync(request.DependentEmail);
+            if (dependentUser == null)
+            {
+                return NotFound(new AuthResponse
+                {
+                    Success = false,
+                    Message = "Dependente não encontrado."
+                });
+            }
+
+            var requesterUser = await _userRepository.GetUserByEmailAsync(userEmail);
+
+            var dependent = new Dependent
+            {
+                UserId = requesterUser.Id,
+                DependentId = dependentUser.Id
+            };
+
+            var createdDependent = await _userRepository.AddDependentAsync(dependent);
+
+            var dependentDto = new DependentDto
+            {
+                Id = createdDependent.DependentId,
+                Name = dependentUser.Name,
+                Age = dependentUser.Age
+            };
+
+            return CreatedAtAction(nameof(AddDependent), new { id = createdDependent.DependentId }, dependentDto);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new AuthResponse
+            {
+                Success = false,
+                Message = $"Um erro ocorreu ao adicionar o dependente: {ex.Message}"
+            });
+        }
+    }
 }
