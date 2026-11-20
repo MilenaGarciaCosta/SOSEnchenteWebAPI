@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<HealthProfile> HealthProfiles { get; set; }
     public DbSet<EmergencyContact> EmergencyContacts { get; set; }
     public DbSet<Dependent> Dependents { get; set; }
+    public DbSet<SecurityAuditEvent> SecurityAuditEvents { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

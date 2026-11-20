@@ -14,12 +14,18 @@ public class MqttAlertListener : BackgroundService
     private readonly IHubContext<AlertHub> _hubContext;
     private readonly IConfiguration _configuration;
     private readonly ILogger<MqttAlertListener> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public MqttAlertListener(IHubContext<AlertHub> hubContext, IConfiguration configuration, ILogger<MqttAlertListener> logger)
+    public MqttAlertListener(
+        IHubContext<AlertHub> hubContext,
+        IConfiguration configuration,
+        ILogger<MqttAlertListener> logger,
+        IServiceScopeFactory scopeFactory)
     {
         _hubContext = hubContext;
         _configuration = configuration;
         _logger = logger;
+        _scopeFactory = scopeFactory;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -53,9 +59,10 @@ public class MqttAlertListener : BackgroundService
                     _logger.LogInformation("MQTT conectado. Escutando o tópico {Topic}", topic);
                 }
             }
-            catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
+            catch (Exception) when (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogWarning("Não foi possível conectar ao MQTT: {Message}", ex.Message);
+                // Evita gravar detalhes técnicos da exceção de rede em texto claro
+                _logger.LogWarning("Não foi possível conectar ao broker MQTT. Nova tentativa em 5 segundos.");
             }
 
             try
@@ -86,7 +93,16 @@ public class MqttAlertListener : BackgroundService
         }
         catch (JsonException)
         {
-            _logger.LogWarning("Mensagem MQTT inválida: {Payload}", payload);
+            // Valida o payload recebido contra PII antes de qualquer registro em log (Taint Analysis)
+            using var scope = _scopeFactory.CreateScope();
+            var piiScanner = scope.ServiceProvider.GetRequiredService<IPiiScannerService>();
+            var safeLogger = scope.ServiceProvider.GetRequiredService<ISafeLoggerService>();
+
+            var taintedContext = piiScanner.ScanJsonPayload(payload);
+            await safeLogger.TryLogInfoAsync(
+                $"Mensagem MQTT inválida recebida: {payload}",
+                taintedContext,
+                "mqtt://alerts");
             return;
         }
 
